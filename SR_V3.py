@@ -14,28 +14,24 @@ import json
 def setup_driver():
     chrome_options = Options()
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--window-size=1200,900")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_argument("--no-sandbox")  # Essential for cloud
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Essential for cloud
     chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
-
+    chrome_options.add_argument("--window-size=1200,900")
+    
+    # Set the binary location if needed (for Streamlit Cloud)
+    chrome_options.binary_location = "/usr/bin/google-chrome"
+    
+    # Use ChromeDriverManager with specific version if needed
     service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
     
-    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
-        'source': '''
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-            window.chrome = {
-                runtime: {},
-            };
-        '''
-    })
-    
-    return driver
+    try:
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        return driver
+    except Exception as e:
+        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
+        return None
     
     
 
