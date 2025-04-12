@@ -90,11 +90,14 @@ def scrape_wttj(search_term):
                         "Titre": container.text.strip(),
                         "HTML": container.get_attribute("outerHTML"),
                     }
-
+            
+                    # Vérifier si l'élément <a> existe avant de tenter de récupérer le lien
                     link_el = container.find_element(By.CSS_SELECTOR, "a")
                     if link_el:
                         job_data["Lien"] = link_el.get_attribute("href")
-
+                    else:
+                        job_data["Lien"] = "Lien non disponible"  # Ou autre valeur par défaut
+            
                     # Extraire la localisation (par exemple, s'il y a une mention de ville dans le texte)
                     location = "Non précisé"
                     try:
@@ -102,14 +105,15 @@ def scrape_wttj(search_term):
                         location = location_el.text.strip()
                     except:
                         pass  # Si aucun emplacement n'est trouvé, on laisse "Non précisé"
-
+            
                     job_data["Localisation"] = location
                     jobs.append(job_data)
                     print(f"✅ Extracted job with {len(job_data['Titre'])} characters of raw text")
-
+            
                 except Exception as e:
                     print(f"⚠️ Failed to extract from container: {str(e)[:100]}...")
                     continue
+
 
             # Vérifier si le nombre de résultats a changé par rapport à la page précédente
             if len(jobs) == previous_results_count:
