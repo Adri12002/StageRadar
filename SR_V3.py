@@ -12,7 +12,7 @@ import sys
 from selenium_stealth import stealth
 
 # Configuration du driver Selenium
- def setup_driver():
+def setup_driver():
     chrome_options = Options()
     
     # Options for macOS
