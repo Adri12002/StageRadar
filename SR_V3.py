@@ -49,6 +49,10 @@ def setup_driver():
     # Fonction de scraping avec Selenium
 def scrape_wttj(search_term):
     driver = setup_driver()
+    if not driver:
+        print("Erreur lors de l'initialisation du driver")
+        return []
+
     current_page = 1  # Commence à partir de la première page
     jobs = []
     previous_results_count = 0  # Pour suivre le nombre de résultats sur la page précédente
@@ -118,8 +122,11 @@ def scrape_wttj(search_term):
     except Exception as e:
         print(f"⚠️ An error occurred: {str(e)}")
     
-    driver.quit()  # Fermer le driver après le scraping
+    # Vérifier que le driver est bien initialisé avant de le quitter
+    if driver:
+        driver.quit()  # Fermer le driver après le scraping
     return jobs
+
 
 # Fonction pour sauvegarder les données dans un fichier Excel
 def save_to_excel(df, filename='resultats_stages.xlsx'):
