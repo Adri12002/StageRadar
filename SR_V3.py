@@ -46,97 +46,108 @@ def setup_driver():
         print(f"Failed to initialize ChromeDriver: {str(e)}")
         return None
 
-# Fonction de scraping avec Selenium
+    # Fonction de scraping avec Selenium
 def scrape_wttj(search_term):
     driver = setup_driver()
-    if not driver:
-        return []
-    
-    current_page = 1
+    current_page = 1  # Commence à partir de la première page
     jobs = []
-    previous_results_count = 0
+    previous_results_count = 0  # Pour suivre le nombre de résultats sur la page précédente
 
     try:
-        while True:
+        while True:  # Boucle infinie qui s'arrête lorsqu'il n'y a plus de résultats
+            # Construction de l'URL avec le terme de recherche
             url = f"https://www.welcometothejungle.com/fr/jobs?refinementList%5Boffices.country_code%5D%5B%5D=FR&refinementList%5Bcontract_type%5D%5B%5D=internship&query={search_term}&page={current_page}"
-            st.write(f"🌐 Chargement de la page {current_page}...")
-            
-            try:
-                driver.get(url)
-                WebDriverWait(driver, 15).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "li[data-testid='search-results-list-item-wrapper']"))
-                )
-            except Exception as e:
-                st.warning(f"Timeout ou erreur de chargement de la page {current_page}")
-                break
+            print(f"🌐 Loading page {current_page}: {url}")
+            driver.get(url)
 
-            # Accepter les cookies
+            # Attendre que la page charge (attendre que l'élément de résultat de recherche apparaisse)
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "li[data-testid='search-results-list-item-wrapper']")))
+
+            # Accepter les cookies si présents
             try:
-                cookie_btn = WebDriverWait(driver, 5).until(
-                    EC.element_to_be_clickable((By.ID, "axeptio_btn_acceptAll"))
-                )
-                cookie_btn.click()
+                driver.find_element(By.ID, "axeptio_btn_acceptAll").click()
+                print("✅ Accepted cookies")
                 time.sleep(1)
             except:
-                pass
+                print("ℹ️ No cookie popup found")
 
             # Trouver les containers des offres
             containers = driver.find_elements(By.CSS_SELECTOR, "li[data-testid='search-results-list-item-wrapper']")
-            if not containers:
-                break
+            print(f"🔍 Found {len(containers)} job containers on page {current_page}")
 
-            for container in containers[:30]:
+            if len(containers) == 0:
+                print("⚠️ No results found on this page, stopping.")
+                break  # Arrêter si aucune offre n'est trouvée
+
+            # Ajouter les résultats de cette page
+            for container in containers[:30]:  # Récupérer les 30 premiers containers
                 try:
                     job_data = {
                         "Titre": container.text.strip(),
-                        "Lien": container.find_element(By.CSS_SELECTOR, "a").get_attribute("href"),
-                        "Localisation": "Non précisé"
+                        "HTML": container.get_attribute("outerHTML"),
                     }
-                    
+
+                    link_el = container.find_element(By.CSS_SELECTOR, "a")
+                    if link_el:
+                        job_data["Lien"] = link_el.get_attribute("href")
+
+                    # Extraire la localisation (par exemple, s'il y a une mention de ville dans le texte)
+                    location = "Non précisé"
                     try:
-                        job_data["Localisation"] = container.find_element(
-                            By.CSS_SELECTOR, "div[data-testid='job-location']"
-                        ).text.strip()
+                        location_el = container.find_element(By.CSS_SELECTOR, "div[data-testid='job-location']")
+                        location = location_el.text.strip()
                     except:
-                        pass
-                    
+                        pass  # Si aucun emplacement n'est trouvé, on laisse "Non précisé"
+
+                    job_data["Localisation"] = location
                     jobs.append(job_data)
-                    
+                    print(f"✅ Extracted job with {len(job_data['Titre'])} characters of raw text")
+
                 except Exception as e:
+                    print(f"⚠️ Failed to extract from container: {str(e)[:100]}...")
                     continue
 
+            # Vérifier si le nombre de résultats a changé par rapport à la page précédente
             if len(jobs) == previous_results_count:
-                break
-                
-            previous_results_count = len(jobs)
-            current_page += 1
-            time.sleep(2)  # Be polite with delay between requests
+                print("⚠️ No new results found, stopping.")
+                break  # Si aucun nouveau résultat n'a été trouvé, on arrête
+
+            previous_results_count = len(jobs)  # Mettre à jour le nombre de résultats précédents                
+            current_page += 1  # Passer à la page suivante
 
     except Exception as e:
-        st.error(f"Erreur lors du scraping: {str(e)}")
-    finally:
-        driver.quit()
-        
+        print(f"⚠️ An error occurred: {str(e)}")
+    
+    driver.quit()  # Fermer le driver après le scraping
     return jobs
 
-# Fonctions de traitement des données (unchanged)
+# Fonction pour sauvegarder les données dans un fichier Excel
 def save_to_excel(df, filename='resultats_stages.xlsx'):
     df.to_excel(filename, index=False)
     return filename
 
+# Fonction pour séparer la colonne Titre en fonction des lignes d'éléments du JSON
 def split_title_column(df):
+    # Créer une nouvelle colonne pour chaque partie du titre séparée par un saut de ligne
     for i, row in df.iterrows():
+        # Séparer le titre en une liste en utilisant le saut de ligne
         titles = row['Titre'].split("\n")
+        
+        # Ajouter une colonne pour chaque élément de la liste, en vérifiant la longueur
         for idx, title in enumerate(titles):
-            df.loc[i, f"Titre_{idx+1}"] = title.strip()
+            df.loc[i, f"Titre_{idx+1}"] = title.strip()  # Ajouter à la colonne Titre_1, Titre_2, etc.
+    
     return df
 
+# Fonction pour récupérer la dernière valeur non vide dans la ligne
 def get_last_non_empty_value(row):
-    for col in reversed(row.index):
+    # On commence par la dernière colonne et on remonte
+    for col in reversed(row.index):  # Inclure aussi la dernière colonne
         if pd.notna(row[col]) and row[col] != '':
             return row[col]
     return None
 
+# Fonction pour ajouter la dernière information non vide à sa gauche
 def add_last_non_empty_column(df):
     df["Dernière_info"] = df.apply(get_last_non_empty_value, axis=1)
     return df
@@ -144,35 +155,56 @@ def add_last_non_empty_column(df):
 # Application Streamlit
 st.title('StageRadar')
 
-# Interface utilisateur
+# Champ de recherche pour un stage ou une entreprise
 search_term = st.text_input('Rechercher un stage ou une entreprise')
+
+# Champ de recherche pour la localisation (optionnel)
 location_filter = st.text_input('Filtrer par localisation (optionnel)')
+
+# Champ de filtre par type de contrat
 contract_type = st.selectbox("Type de contrat", ['Stage', 'Alternance', 'CDI', 'CDD'])
 
-if st.button("Lancer la recherche") and search_term:
-    with st.spinner('Recherche en cours...'):
-        results = scrape_wttj(search_term)
-        
+# Bouton de recherche avec l'icône
+if search_term:
+    st.write(f"Résultats pour : {search_term}")
+    
+    # Scraper les données
+    results = scrape_wttj(search_term)
+    
     if results:
+        st.write(f"Voici les {len(results)} offres de stage trouvées :")
+        
+        # Convertir les résultats en DataFrame pour afficher sous forme de tableau
         df = pd.DataFrame(results)
         
+        # Si un filtre de localisation est spécifié, on l'applique
         if location_filter:
             df = df[df['Localisation'].str.contains(location_filter, case=False, na=False)]
+            st.write(f"Résultats filtrés par localisation : {location_filter}")
         
-        df = df.drop(columns=["Localisation"])
+        # Supprimer la colonne "HTML" et "Localisation"
+        df = df.drop(columns=["HTML", "Localisation"])
+        
+        # Séparer la colonne "Titre" en fonction des lignes d'éléments du JSON
         df = split_title_column(df)
+        
+        # Ajouter la colonne avec la dernière info non vide à sa gauche
         df = add_last_non_empty_column(df)
         
+        # Supprimer les colonnes Titre, Titre_5, et Titre_6 et Titre_7
         columns_to_remove = ['Titre', 'Titre_5', 'Titre_6', 'Titre_7']
         df = df.drop(columns=[col for col in columns_to_remove if col in df.columns])
 
-        cols = [col for col in df.columns if col != 'Lien']
-        cols.append('Lien')
-        df = df[cols]
+        # Réorganiser les colonnes pour que le lien soit à la fin
+        cols = [col for col in df.columns if col != 'Lien']  # Liste des colonnes sans 'Lien'
+        cols.append('Lien')  # Ajouter 'Lien' à la fin
+        df = df[cols]  # Réorganiser le DataFrame
         
+        # Réinitialiser l'index pour commencer à 1
         df.reset_index(drop=True, inplace=True)
-        df.index += 1
+        df.index += 1  # Modifier l'index pour commencer à 1
 
+        # Renommer les colonnes d'office
         new_column_names = {
             "Titre_1": "Société",
             "Titre_2": "Poste",
@@ -181,16 +213,20 @@ if st.button("Lancer la recherche") and search_term:
         }
         df.rename(columns=new_column_names, inplace=True)
 
+        # Sauvegarder le DataFrame dans un fichier Excel
         excel_file = save_to_excel(df)
         
-        st.success(f"{len(df)} offres trouvées!")
-        st.dataframe(df)
-        
+        st.write("Télécharger les résultats :")
         st.download_button(
-            label="Télécharger le fichier Excel",
-            data=open(excel_file, 'rb').read(),
-            file_name=excel_file,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        label="Télécharger le fichier Excel",
+        data=open(excel_file, 'rb').read(),
+        file_name=excel_file,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+        # Afficher le DataFrame sous forme de tableau interactif
+        st.dataframe(df)
+
     else:
-        st.warning("Aucune offre trouvée.")
+        st.write("Aucune offre trouvée.")
+else:
+    st.write("Entrez un terme pour commencer la recherche.")
