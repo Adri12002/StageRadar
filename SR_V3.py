@@ -10,6 +10,12 @@ import time
 import pandas as pd
 import sys
 from selenium_stealth import stealth
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.webdriver import WebDriver
 
 
 # Configuration du driver Selenium
