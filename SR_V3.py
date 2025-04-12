@@ -12,23 +12,20 @@ import sys
 from selenium_stealth import stealth
 
 # Configuration du driver Selenium
-def setup_driver():
+ def setup_driver():
     chrome_options = Options()
     
-    # Essential options for Streamlit Cloud
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1200,900")
-    
-    # Anti-detection options
+    # Options for macOS
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--window-size=1200,900")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
     
+    # For local development on macOS, you might not need headless
+    chrome_options.add_argument("--headless")  # Uncomment if you want headless
+    
     try:
-        # Install ChromeDriver
+        # Use ChromeDriverManager with specific version
         service = Service(ChromeDriverManager().install())
         
         # Initialize driver
@@ -36,9 +33,9 @@ def setup_driver():
         
         # Apply stealth settings
         stealth(driver,
-                languages=["fr-FR", "fr"],
+                languages=["en-US", "en"],
                 vendor="Google Inc.",
-                platform="Win32",
+                platform="MacIntel",
                 webgl_vendor="Intel Inc.",
                 renderer="Intel Iris OpenGL Engine",
                 fix_hairline=True)
@@ -46,7 +43,7 @@ def setup_driver():
         return driver
         
     except Exception as e:
-        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
+        print(f"Failed to initialize ChromeDriver: {str(e)}")
         return None
 
 # Fonction de scraping avec Selenium
