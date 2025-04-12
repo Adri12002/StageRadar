@@ -19,6 +19,15 @@ def setup_driver():
     
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    # Mode headless
+    chrome_options.add_argument("--headless")  # Lancer Chrome sans UI
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
     
     # Masquer la détection de Selenium
     driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
