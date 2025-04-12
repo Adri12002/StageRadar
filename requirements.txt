@@ -2,4 +2,5 @@ streamlit
 selenium
 webdriver-manager
 pandas
-chromedriver-binary-auto  # Automatically handles ChromeDriver binaries
+selenium-stealth
+chromedriver-binary-auto
