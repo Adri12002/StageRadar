@@ -11,27 +11,27 @@ import pandas as pd
 import json
 
 # Configuration du driver Selenium
+from selenium_stealth import stealth
+
 def setup_driver():
     chrome_options = Options()
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--no-sandbox")  # Essential for cloud
-    chrome_options.add_argument("--disable-dev-shm-usage")  # Essential for cloud
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1200,900")
     
-    # Set the binary location if needed (for Streamlit Cloud)
-    chrome_options.binary_location = "/usr/bin/google-chrome"
-    
-    # Use ChromeDriverManager with specific version if needed
     service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     
-    try:
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        return driver
-    except Exception as e:
-        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
-        return None
+    # Use selenium-stealth to avoid detection
+    stealth(driver,
+            languages=["en-US", "en"],
+            vendor="Google Inc.",
+            platform="Win32",
+            webgl_vendor="Intel Inc.",
+            renderer="Intel Iris OpenGL Engine",
+            fix_hairline=True)
+    
+    return driver
     
     
 
