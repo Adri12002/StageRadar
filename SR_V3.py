@@ -21,23 +21,23 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 # Configuration du driver Selenium
 def setup_driver() -> WebDriver:
     chrome_options = Options()
-    
+
     # Configurations de base pour l'environnement sans interface graphique
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--window-size=1200,900")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
-    
+
     # Activer le mode headless pour éviter l'ouverture de fenêtre du navigateur
     chrome_options.add_argument("--headless")  # Toujours en mode headless
-    
+
     try:
         # Utilisation de ChromeDriverManager pour télécharger et installer le bon driver
         service = Service(ChromeDriverManager().install())
-        
+
         # Initialisation du driver avec les options spécifiées
         driver = webdriver.Chrome(service=service, options=chrome_options)
-        
+
         # Si tu veux appliquer des "stealth settings" pour masquer l'automatisation (optionnel)
         # Cela peut être utile pour masquer le fait que tu utilises Selenium
         # Assure-toi d'importer 'stealth' si tu choisis de l'utiliser
@@ -52,9 +52,9 @@ def setup_driver() -> WebDriver:
                     fix_hairline=True)
         except ImportError:
             print("Selenium Stealth n'est pas installé. Cette partie peut être ignorée.")
-        
+
         return driver
-        
+
     except Exception as e:
         print(f"Échec de l'initialisation de ChromeDriver: {str(e)}")
         return None
