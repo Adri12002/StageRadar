@@ -16,24 +16,14 @@ def setup_driver():
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--window-size=1200,900")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
-
-    # Ajout des options nécessaires pour le mode headless
-    chrome_options.add_argument("--headless")  # Lancer Chrome sans UI
-    chrome_options.add_argument("--no-sandbox")  # Permet d'exécuter sans interface graphique
-    chrome_options.add_argument("--disable-dev-shm-usage")  # Permet d'éviter les erreurs de ressources
-    chrome_options.add_argument("--remote-debugging-port=9222")  # Pour déboguer à distance si nécessaire
-    chrome_options.add_argument("--disable-gpu")  # Désactive l'utilisation du GPU
-
-    # Configure le service du webdriver
-    service = Service(ChromeDriverManager().install())
     
-    # Initialise le driver avec ces options
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    
-    # Masquer la détection de Selenium
     driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
         'source': '''
             Object.defineProperty(navigator, 'webdriver', {
