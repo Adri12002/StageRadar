@@ -11,36 +11,49 @@ import pandas as pd
 import sys
 from selenium_stealth import stealth
 
+
 # Configuration du driver Selenium
-def setup_driver():
+def setup_driver() -> WebDriver:
     chrome_options = Options()
     
-    # Options for macOS
+    # Configurations de base pour l'environnement sans interface graphique
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--window-size=1200,900")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
     
-    # For local development on macOS, you might not need headless
-    chrome_options.add_argument("--headless")  # Uncomment if you want headless
+    # Activer le mode headless pour éviter l'ouverture de fenêtre du navigateur
+    chrome_options.add_argument("--headless")  # Toujours en mode headless
     
     try:
-        # Use ChromeDriverManager with specific version
+        # Utilisation de ChromeDriverManager pour télécharger et installer le bon driver
         service = Service(ChromeDriverManager().install())
         
-        # Initialize driver
+        # Initialisation du driver avec les options spécifiées
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
-        # Apply stealth settings
-        stealth(driver,
-                languages=["en-US", "en"],
-                vendor="Google Inc.",
-                platform="MacIntel",
-                webgl_vendor="Intel Inc.",
-                renderer="Intel Iris OpenGL Engine",
-                fix_hairline=True)
+        # Si tu veux appliquer des "stealth settings" pour masquer l'automatisation (optionnel)
+        # Cela peut être utile pour masquer le fait que tu utilises Selenium
+        # Assure-toi d'importer 'stealth' si tu choisis de l'utiliser
+        try:
+            from selenium_stealth import stealth
+            stealth(driver,
+                    languages=["en-US", "en"],
+                    vendor="Google Inc.",
+                    platform="MacIntel",
+                    webgl_vendor="Intel Inc.",
+                    renderer="Intel Iris OpenGL Engine",
+                    fix_hairline=True)
+        except ImportError:
+            print("Selenium Stealth n'est pas installé. Cette partie peut être ignorée.")
         
         return driver
+        
+    except Exception as e:
+        print(f"Échec de l'initialisation de ChromeDriver: {str(e)}")
+        return None
+
+
         
     except Exception as e:
         print(f"Failed to initialize ChromeDriver: {str(e)}")
