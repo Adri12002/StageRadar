@@ -128,11 +128,6 @@ def scrape_wttj(search_term):
     return jobs
 
 
-# Fonction pour sauvegarder les données dans un fichier Excel
-def save_to_excel(df, filename='resultats_stages.xlsx'):
-    df.to_excel(filename, index=False)
-    return filename
-
 # Fonction pour séparer la colonne Titre en fonction des lignes d'éléments du JSON
 def split_title_column(df):
     # Créer une nouvelle colonne pour chaque partie du titre séparée par un saut de ligne
